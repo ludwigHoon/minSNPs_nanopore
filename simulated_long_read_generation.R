@@ -29,5 +29,5 @@ sim_creation_result <- bplapply(seq_len(nrow(all_data)), function(dat, all_data)
 
 n_reads <- rbindlist(sim_creation_result)
 n_reads$n_reads <- sapply(strsplit(n_reads$n_reads, split = " "), `[`, 1)
-n_reads$n_reads <- n_reads$n_reads/4
+n_reads$n_reads <- as.numeric(n_reads$n_reads)/4
 write.csv(n_reads, "sim_n_reads.csv", row.names = FALSE)
