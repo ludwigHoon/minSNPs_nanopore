@@ -43,7 +43,8 @@ fin_res <- bplapply(c("random_400", "non_random_200"), function(dir, meta){
 all_result <- rbindlist(fin_res)
 
 colnames(all_result)[which(colnames(all_result) == "MLST.CC")] <- "predicted_MLST.CC"
-fwrite(all_result, "aggregated_simulation_result.csv", row.names = FALSE)
+fwrite(all_result, "simulation_aggregated_result.csv", row.names = FALSE)
+
 to_collapse <- all_result[all_result[, .I[fin_score == max(fin_score)], by = list(pubmlst_id, snps_type, snps_used, reads_used)]$V1]
 collapsed_top_result <- to_collapse[,.(predicted_MLST.CC = paste0(predicted_MLST.CC, collapse = ","), reads_w_result = paste0(reads_count, collapse = ",")), by = list(pubmlst_id, snps_type, snps_used, reads_used, fin_score, proportion_matched, proportion_scheme_found, estimated_coverage)]
 newdata_meta <- fread(FILLED_META_FILE)[!is.na(pubmlst_id)][, c("pubmlst_id", "MLST.CC", "CC_filled")]
@@ -59,8 +60,9 @@ RES$predicted_mlst_is_correct <- sapply(seq_len(nrow(RES)), function(i){
     }
 })
 fwrite(RES, "simulation_individual_results.csv", row.names = FALSE)
+
 summary <- RES[,.(n_correct = length(which(predicted_mlst_is_correct)),
                 n_single = length(which(predicted_mlst_is_single)),
                 n_single_correct = length(which(predicted_mlst_is_single & predicted_mlst_is_correct))),
             by = list(reads_used, snps_used, snps_type)]
-fwrite(summary, "result_summary.csv", row.names = FALSE)
+fwrite(summary, "simulation_result_summary.csv", row.names = FALSE)

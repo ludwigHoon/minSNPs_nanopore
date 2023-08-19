@@ -16,4 +16,4 @@ Search string generation:
 Scan simulated Nanopore data `Scripts/scan_simulated_read.R`.
 Scan lab generated Nanopore data `Scripts/scan_lab_nanopore.R`.
 
-Transform most similar isolate to most likely CC and aggregated all results for different number of SNPs or reads used : `Scripts/infer_and_aggregate_simulation_result.R`.
+Transform most similar isolate to most likely CC and aggregated all results for different number of SNPs or reads used : `Scripts/aggregate_simulation_result.R`.
