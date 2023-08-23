@@ -47,6 +47,7 @@ fwrite(all_result, "simulation_aggregated_result.csv", row.names = FALSE)
 
 to_collapse <- all_result[all_result[, .I[fin_score == max(fin_score)], by = list(pubmlst_id, snps_type, snps_used, reads_used)]$V1]
 collapsed_top_result <- to_collapse[,.(predicted_MLST.CC = paste0(predicted_MLST.CC, collapse = ","), reads_w_result = paste0(reads_count, collapse = ",")), by = list(pubmlst_id, snps_type, snps_used, reads_used, fin_score, proportion_matched, proportion_scheme_found, estimated_coverage)]
+
 newdata_meta <- fread(FILLED_META_FILE)[!is.na(pubmlst_id)][, c("pubmlst_id", "MLST.CC", "CC_filled", "Isolate.name")]
 newdata_meta$pubmlst_id <- as.character(newdata_meta$pubmlst_id)
 collapsed_top_result$pubmlst_id <- as.character(collapsed_top_result$pubmlst_id)
@@ -70,3 +71,6 @@ fwrite(summary, "simulation_result_summary.csv", row.names = FALSE)
 ## Also extract the predicted MLST using all 385 SNPs with 8000 reads
 predicted_385_8000 <- RES[snps_used == 385 & reads_used == 8000, c("Isolate.name", "predicted_MLST.CC", "fin_score", "predicted_mlst_is_correct", "predicted_mlst_is_single")]
 fwrite(predicted_385_8000, "simulated_385_8000.csv", row.names = FALSE)
+
+## Differences in confidence score between correctly & incorrectly predicted samples
+predicted_385_8000[,list(min_fscore = min(fin_score), max_fscore = max(fin_score), mean_fscore = mean(fin_score)), list(predicted_mlst_is_correct)]
