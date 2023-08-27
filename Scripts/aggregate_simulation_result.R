@@ -38,7 +38,7 @@ fin_res <- bplapply(c("random_400", "non_random_200"), function(dir, meta){
         return(temp_result)
     }, BPPARAM = MulticoreParam(workers = 32))
     return(rbindlist(result))
-}, meta = meta, BPPARAM = BatchtoolsParam(workers = 391, cluster="slurm", template="~/slurm_bc_template.tmpl",
+}, meta = meta, BPPARAM = BatchtoolsParam(workers = 2, cluster="slurm", template="~/slurm_bc_template.tmpl",
         resources=list(walltime=60*60*24*5, ncpus=8)))
 all_result <- rbindlist(fin_res)
 

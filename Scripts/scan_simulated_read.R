@@ -15,7 +15,7 @@ bp <- BatchtoolsParam(workers = 391, cluster="slurm", template=SLURM_TEMPLATE,
     resources=list(walltime=60*60*24*5, ncpus=4))
 
 sim_files <- list.files(pattern = ".*\\.fastq$")
-res <- bplapply(sim_files, function(file){
+res <- bplapply(sim_files, function(file, SSTRING_RANDOM_400){
     search_table2 <- read.csv(SSTRING_RANDOM_400)
     search_table2 <- search_table2[search_table2$strand == "+", ]
     search_table2$SNP <- sapply(strsplit(search_table2$id, split = "_"), `[`, 1)
@@ -24,7 +24,7 @@ res <- bplapply(sim_files, function(file){
 
     # Look for 100, 200, 300, 400 SNPs
     SNPs <- unique(search_table2$SNP)
-    for (max_snps in c(100, 200, 300, 400)){
+    for (max_snps in c(7,13,18,23,27, 100, 200, 300, 400)){
         search_table <- search_table2[search_table2$SNP %in% SNPs[1:max_snps], ]
         previous_result <- NULL
         for (read_i in c(0, 1, 2, 3, 4, 5, 6, 7)){
@@ -43,9 +43,9 @@ res <- bplapply(sim_files, function(file){
             write.csv(tt, paste0("random_400/sim_", file, "_", max_snps, "_", read_i, ".csv"), row.names = FALSE)
             }
     }
-}, BPPARAM=bp)
+}, SSTRING_RANDOM_400 =SSTRING_RANDOM_400, BPPARAM=bp)
 
-res <- bplapply(sim_files, function(file){
+res <- bplapply(sim_files, function(file, SSTRING_MINSNPS_200){
     search_table2 <- read.csv(SSTRING_MINSNPS_200)
     search_table2 <- search_table2[search_table2$strand == "+", ]
     search_table2$SNP <- sapply(strsplit(search_table2$id, split = "_"), `[`, 1)
@@ -73,4 +73,4 @@ res <- bplapply(sim_files, function(file){
             write.csv(tt, paste0("non_random_200/sim_", file, "_", n_sets, "_", read_i, ".csv"), row.names = FALSE)
             }
     }
-}, BPPARAM=bp)
+}, SSTRING_MINSNPS_200= SSTRING_MINSNPS_200, BPPARAM=bp)

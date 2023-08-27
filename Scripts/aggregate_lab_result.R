@@ -35,7 +35,7 @@ for (call_type in c("fast", "hac", "sup")){
             return(temp_result)
         }, BPPARAM = MulticoreParam(workers = 8))
         return(rbindlist(result))
-    }, call_type = call_type, meta = meta, BPPARAM = BatchtoolsParam(workers = 24, cluster="slurm", template="~/slurm_bc_template.tmpl",
+    }, call_type = call_type, meta = meta, BPPARAM = BatchtoolsParam(workers = 2, cluster="slurm", template="~/slurm_bc_template.tmpl",
             resources=list(walltime=60*60*24*5, ncpus=4)))
     all_result_all_ctype[[call_type]] <- rbindlist(fin_res)
 }

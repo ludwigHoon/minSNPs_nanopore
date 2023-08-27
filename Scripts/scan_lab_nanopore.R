@@ -27,7 +27,7 @@ for (call_type in c("fast", "hac", "sup")){
         
         # Look for 100, 200, 300, 400 SNPs
         SNPs <- unique(search_table2$SNP)
-        for (max_snps in c(100, 200, 300, 400)){
+        for (max_snps in c(7, 13, 18, 23, 27, 100, 200, 300, 400)){
             search_table <- search_table2[search_table2$SNP %in% SNPs[1:max_snps], ]
             previous_result <- NULL
             for (read_i in c(0, 1, 2, 3, 4, 5, 6, 7)){
