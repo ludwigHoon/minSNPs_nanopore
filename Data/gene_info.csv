@@ -1,0 +1,4 @@
+gene,start,end,reverse_complement
+"lukS-PV",1520057,1520995,TRUE
+"lukF-PV",1519078,1520061,TRUE
+"mecA",39177,41186,TRUE

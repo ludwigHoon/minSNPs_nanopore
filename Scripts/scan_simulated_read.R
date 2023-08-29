@@ -30,7 +30,7 @@ res <- bplapply(sim_files, function(file, SSTRING_RANDOM_400){
         for (read_i in c(0, 1, 2, 3, 4, 5, 6, 7)){
 
             temp_result <- search_from_fastq_reads(fastq_file = file, search_tables = search_table, 
-                skip_n_reads = (0), progress = TRUE, max_n_reads = 1000,
+                skip_n_reads = (1000 * read_i), progress = TRUE, max_n_reads = 1000,
                 quality_offset = 33, output_temp_result = FALSE, temp_result_folder = "./temp_results",
                 simplify_id = TRUE, output_read_length = TRUE, bp = BiocParallel::MulticoreParam(workers = 8)
                 )

@@ -25,7 +25,7 @@ sim_creation_result <- bplapply(seq_len(nrow(all_data)), function(dat, all_data)
     n_reads <- system(paste0("wc -l ", output_file), wait = TRUE, intern=TRUE)
     return(data.frame(id = id, fas_file = fas_file, n_reads = n_reads))
 }, all_data = all_data, BPPARAM = BatchtoolsParam(workers = 391, cluster="slurm", template="~/slurm_bc_template.tmpl",
-    resources=list(walltime=60*60*24*5, ncpus=4)))
+    resources=list(walltime=60*60*24*5, ncpus=1)))
 
 n_reads <- rbindlist(sim_creation_result)
 n_reads$n_reads <- sapply(strsplit(n_reads$n_reads, split = " "), `[`, 1)
