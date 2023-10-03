@@ -93,23 +93,30 @@ all_result[n_sequence_used == "all" & reads_used == 8000,
 
 fwrite(all_result, "simulated_gene_result.csv", row.names = FALSE)
 
-summary <- all_result[,
+summary <- list()
+for (threshold in c(0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95)){
+    summary[[as.character(threshold)]] <- all_result[,
     list(mean_estimated_coverage = mean(estimated_coverage),
-        mecA_TP = length(which(mecA_prop >= 0.8 & mecA == TRUE)),
-        mecA_FP = length(which(mecA_prop >= 0.8 & mecA == FALSE)),
-        mecA_TN = length(which(mecA_prop < 0.8 & mecA == FALSE)),
-        mecA_FN = length(which(mecA_prop < 0.8 & mecA == TRUE)),
-        lukF_TP = length(which(lukF_prop >= 0.8 & lukF_PV == TRUE)),
-        lukF_FP = length(which(lukF_prop >= 0.8 & lukF_PV == FALSE)),
-        lukF_TN = length(which(lukF_prop < 0.8 & lukF_PV == FALSE)),
-        lukF_FN = length(which(lukF_prop < 0.8 & lukF_PV == TRUE)),
-        lukS_TP = length(which(lukS_prop >= 0.8 & lukS_PV == TRUE)),
-        lukS_FP = length(which(lukS_prop >= 0.8 & lukS_PV == FALSE)),
-        lukS_TN = length(which(lukS_prop < 0.8 & lukS_PV == FALSE)),
-        lukS_FN = length(which(lukS_prop < 0.8 & lukS_PV == TRUE))
+        mecA_TP = length(which(mecA_prop >= threshold & mecA == TRUE)),
+        mecA_FP = length(which(mecA_prop >= threshold & mecA == FALSE)),
+        mecA_TN = length(which(mecA_prop < threshold & mecA == FALSE)),
+        mecA_FN = length(which(mecA_prop < threshold & mecA == TRUE)),
+        lukF_TP = length(which(lukF_prop >= threshold & lukF_PV == TRUE)),
+        lukF_FP = length(which(lukF_prop >= threshold & lukF_PV == FALSE)),
+        lukF_TN = length(which(lukF_prop < threshold & lukF_PV == FALSE)),
+        lukF_FN = length(which(lukF_prop < threshold & lukF_PV == TRUE)),
+        lukS_TP = length(which(lukS_prop >= threshold & lukS_PV == TRUE)),
+        lukS_FP = length(which(lukS_prop >= threshold & lukS_PV == FALSE)),
+        lukS_TN = length(which(lukS_prop < threshold & lukS_PV == FALSE)),
+        lukS_FN = length(which(lukS_prop < threshold & lukS_PV == TRUE))
         ),
     by= list(n_sequence_used, reads_used)][,
-    list(mecA_sensitivity = mecA_TP/(mecA_TP + mecA_FN),
+    list(
+        threshold = threshold,
+        mecA_TP, mecA_FP, mecA_TN, mecA_FN,
+        lukF_TP, lukF_FP, lukF_TN, lukF_FN,
+        lukS_TP, lukS_FP, lukS_TN, lukS_FN,
+        mecA_sensitivity = mecA_TP/(mecA_TP + mecA_FN),
         mecA_specificity = mecA_TN/(mecA_TN + mecA_FP),
         lukF_sensitivity = lukF_TP/(lukF_TP + lukF_FN),
         lukF_specificity = lukF_TN/(lukF_TN + lukF_FP),
@@ -118,4 +125,7 @@ summary <- all_result[,
         mean_estimated_coverage, 
         n_sequence_used, reads_used
         )]
-fwrite(summary, "simulated_gene_summary.csv", row.names = FALSE)
+}
+
+all_summary <- rbindlist(summary)
+fwrite(all_summary, "simulated_gene_summary.csv", row.names = FALSE)

@@ -10,8 +10,12 @@ The analysis were performed on a HPC using Slurm scheduler, and the scripts may 
 4. Neighbour Joining tree is created with MEGA with `mega_with_newdata.fasta` as the input and all default parameters, output: `Result/mega_with_newdata_NJT.nwk`.
 
 # Sampling 400 random SNPs
+All the SNPs are scrambled and the first 400 is taken, see `Scripts/random_snps_selection.R`.
 
 # Search string generation
+For
+- random SNPs, see ``.
+- minSNPs selected SNPs, see ``.
 
 
 # Testing with lab generated Nanopore data
