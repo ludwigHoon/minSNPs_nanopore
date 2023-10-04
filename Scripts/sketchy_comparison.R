@@ -100,3 +100,141 @@ summary <- merged_result[,.(n_correct = length(which(predicted_mlst_is_correct))
 fwrite(summary, "sketchy_summary.csv", row.names = FALSE)
 
 ### GENE DETECTION COMPARISON
+summarised_to_meta <- fread("gene_summarised_to_meta.csv")
+summarised_to_meta$pubmlst_id <- sapply(strsplit(summarised_to_meta$seq_name, split = "_"), `[`, 1)
+
+agg_high_result <- fread("sketchy_agg_result_10k.csv")
+agg_default_result <- fread("sketchy_agg_result_1k.csv")
+combined_result <- rbindlist(list(agg_default_result, agg_high_result))
+
+combined_result$pubmlst_id <- as.character(combined_result$pubmlst_id)
+temp <- merge(combined_result, summarised_to_meta[,-c("seq_name")], by = "pubmlst_id")
+
+temp <- temp[,
+    list(mecA, lukF_PV, lukS_PV,
+        mecA_pred = paste0(meca, collapse = ","),
+        pvl_pred = paste0(pvl, collapse = ","),
+        shared_hashes = paste0(shared_hashes, collapse = ",")),
+    by = list(resolution, reads, pubmlst_id)
+]
+
+temp$multiple_meca <- sapply(temp$mecA_pred, function(x){
+    return(length(unique(strsplit(x, split = ",")[[1]])) != 1)}
+)
+temp$multiple_pvl <- sapply(temp$pvl_pred, function(x){
+    pvl_stats <- unique(strsplit(x, split = ",")[[1]])
+    pvl_stats <- gsub("\\*", "-", pvl_stats)
+    return(length(unique(pvl_stats)) != 1)}
+)
+
+temp$mecA_correct <- sapply(seq_len(nrow(temp)), function(i){
+    MRSA_in_closest <- grepl("MRSA", temp$mecA_pred[i])
+    return( temp$mecA[i] == MRSA_in_closest)
+})
+
+temp$pvl_correct <- sapply(seq_len(nrow(temp)), function(i){
+    PVL_in_closest <- grepl("PVL+", temp$pvl_pred[i])
+    return( temp$lukF_PV[i] == PVL_in_closest)
+})
+
+temp$mecA_sensitive <- sapply(seq_len(nrow(temp)), function(i){
+    MRSA_in_closest <- grepl("MRSA", temp$mecA_pred[i])
+    return( MRSA_in_closest )
+})
+
+temp$pvl_sensitive <- sapply(seq_len(nrow(temp)), function(i){
+    PVL_in_closest <- grepl("PVL+", temp$pvl_pred[i])
+    return( PVL_in_closest )
+})
+
+temp$mecA_correct_major <- unlist(bplapply(seq_len(nrow(temp)), function(i){
+    mecA_count <- table(strsplit(temp$mecA_pred[i], split = ",")[[1]])
+    predicted <- names(which(mecA_count == max(mecA_count)))
+    if (predicted == "MRSA"){
+        MRSA_in_closest <- TRUE
+    } else{
+        MRSA_in_closest <- FALSE
+    }
+    return( temp$mecA[i] == MRSA_in_closest)
+}, BPPARAM=MulticoreParam(workers = 4, progress = TRUE)))
+
+temp$mecA_pred_major <- unlist(bplapply(seq_len(nrow(temp)), function(i){
+    mecA_count <- table(strsplit(temp$mecA_pred[i], split = ",")[[1]])
+    predicted <- names(which(mecA_count == max(mecA_count)))
+    if (predicted == "MRSA"){
+        MRSA_in_closest <- TRUE
+    } else{
+        MRSA_in_closest <- FALSE
+    }
+    return( MRSA_in_closest )
+}, BPPARAM=MulticoreParam(workers = 4, progress = TRUE)))
+
+temp$pvl_correct_major <- unlist(bplapply(seq_len(nrow(temp)), function(i){
+    pvl_stats <- strsplit(temp$pvl_pred, split = ",")[[1]]
+    pvl_stats <- gsub("\\*", "-", pvl_stats)
+    pvl_count <- table(pvl_stats)
+    predicted <- names(which(pvl_count == max(pvl_count)))
+    
+    if(predicted == "PVL+"){
+        PVL_in_closest <- TRUE
+    } else{
+        PVL_in_closest <- FALSE
+    }
+    return( temp$lukF_PV[i] == PVL_in_closest)
+}, BPPARAM=MulticoreParam(workers = 16, progress = TRUE)))
+
+temp$pvl_pred_major <- unlist(bplapply(seq_len(nrow(temp)), function(i){
+    pvl_stats <- strsplit(temp$pvl_pred, split = ",")[[1]]
+    pvl_stats <- gsub("\\*", "-", pvl_stats)
+    pvl_count <- table(pvl_stats)
+    predicted <- names(which(pvl_count == max(pvl_count)))
+    
+    if(predicted == "PVL+"){
+        PVL_in_closest <- TRUE
+    } else{
+        PVL_in_closest <- FALSE
+    }
+    return( PVL_in_closest )
+}, BPPARAM=MulticoreParam(workers = 16, progress = TRUE)))
+
+fwrite(temp, "sketchy_gene_comparison.csv", row.names = FALSE)
+
+summary <- temp[,
+    list(
+        mecA_major_TP = length(which(mecA_pred_major & mecA)),
+        mecA_major_TN = length(which(!mecA_pred_major & !mecA)),
+        mecA_major_FP = length(which(mecA_pred_major & !mecA)),
+        mecA_major_FN = length(which(!mecA_pred_major & mecA)),
+        pvl_major_TP = length(which(pvl_pred_major & lukF_PV)),
+        pvl_major_TN = length(which(!pvl_pred_major & !lukF_PV)),
+        pvl_major_FP = length(which(pvl_pred_major & !lukF_PV)),
+        pvl_major_FN = length(which(!pvl_pred_major & lukF_PV)),
+        mecA_sensitive_TP = length(which(mecA_sensitive & mecA)),
+        mecA_sensitive_TN = length(which(!mecA_sensitive & !mecA)),
+        mecA_sensitive_FP = length(which(mecA_sensitive & !mecA)),
+        mecA_sensitive_FN = length(which(!mecA_sensitive & mecA)),
+        pvl_sensitive_TP = length(which(pvl_sensitive & lukF_PV)),
+        pvl_sensitive_TN = length(which(!pvl_sensitive & !lukF_PV)),
+        pvl_sensitive_FP = length(which(pvl_sensitive & !lukF_PV)),
+        pvl_sensitive_FN = length(which(!pvl_sensitive & lukF_PV))
+    ),
+    by = list(resolution, reads)
+][,
+    list(
+        resolution, reads,
+        mecA_major_TP, mecA_major_TN, mecA_major_FP, mecA_major_FN,
+        pvl_major_TP, pvl_major_TN, pvl_major_FP, pvl_major_FN,
+        mecA_sensitive_TP, mecA_sensitive_TN, mecA_sensitive_FP, mecA_sensitive_FN,
+        pvl_sensitive_TP, pvl_sensitive_TN, pvl_sensitive_FP, pvl_sensitive_FN,
+        mecA_major_sensitivity = mecA_major_TP / (mecA_major_TP + mecA_major_FN),
+        mecA_major_specificity = mecA_major_TN / (mecA_major_TN + mecA_major_FP),
+        pvl_major_sensitivity = pvl_major_TP / (pvl_major_TP + pvl_major_FN),
+        pvl_major_specificity = pvl_major_TN / (pvl_major_TN + pvl_major_FP),
+        mecA_sensitive_sensitivity = mecA_sensitive_TP / (mecA_sensitive_TP + mecA_sensitive_FN),
+        mecA_sensitive_specificity = mecA_sensitive_TN / (mecA_sensitive_TN + mecA_sensitive_FP),
+        pvl_sensitive_sensitivity = pvl_sensitive_TP / (pvl_sensitive_TP + pvl_sensitive_FN),
+        pvl_sensitive_specificity = pvl_sensitive_TN / (pvl_sensitive_TN + pvl_sensitive_FP)
+    )
+]
+
+fwrite(summary, "sketchy_gene_summary.csv", row.names = FALSE)

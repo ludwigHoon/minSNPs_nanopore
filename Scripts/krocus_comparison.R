@@ -14,8 +14,8 @@ library(BiocParallel)
 library(data.table)
 
 
-bp <- BatchtoolsParam(workers = 391, cluster="slurm", template=SLURM_TEMPLATE,
-    resources=list(walltime=60*60*24*5, ncpus=1))
+bp <- BatchtoolsParam(workers = 15, cluster="slurm", template=SLURM_TEMPLATE,
+    resources=list(walltime=60*60*24*5, ncpus=1), progress = TRUE)
 
 
 all_simulated <- list.files(pattern = ".*.fastq")
@@ -138,3 +138,4 @@ summary <- merged_result[,.(n_correct = length(which(predicted_cc_is_correct)),
               n_single_correct = length(which(predicted_mlst_is_single & predicted_cc_is_correct))
               ),
             by = list(n_reads)]
+fwrite(summary, "krocus_summary.csv", row.names = FALSE)
