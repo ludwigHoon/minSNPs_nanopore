@@ -18,13 +18,16 @@ For
 - minSNPs selected SNPs, see ``.
 
 
-# Testing with lab generated Nanopore data
+# Major lineage assignment
+
+## Testing with lab generated Nanopore data
 **Steps:**
 1. Scan lab generated Nanopore data `Scripts/scan_lab_nanopore.R`.
 2. Transform most similar isolate to most likely CC and aggregated all results for different number of SNPs or reads used : `Scripts/aggregate_lab_result.R`.
 
-# Testing with simulated long-read data
+## Testing with simulated long-read data
 **Steps:**
 1. Simulate long read with pbsim2 (see `Scripts/simulated_long_read_generation.R`), see `Data/BIGSdb_3343897_1178826571_39602.csv` for the list of data download from pubMLST and `Results/sim_n_reads.csv` output for number of reads generated.
-2. Scan simulated Nanopore data `Scripts/scan_simulated_read.R`.
-3. Transform most similar isolate to most likely CC and aggregated all results for different number of SNPs or reads used : `Scripts/aggregate_simulation_result.R`.
+2. Assign most likely CC for tested samples based on SNPs distance: `Scripts/assign_cc_meta.R`
+3. Scan simulated Nanopore data `Scripts/scan_simulated_read.R`.
+4. Transform most similar isolate to most likely CC and aggregated all results for different number of SNPs or reads used : `Scripts/aggregate_simulation_result.R`.

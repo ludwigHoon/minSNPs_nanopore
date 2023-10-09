@@ -197,6 +197,27 @@ temp$pvl_pred_major <- unlist(bplapply(seq_len(nrow(temp)), function(i){
     return( PVL_in_closest )
 }, BPPARAM=MulticoreParam(workers = 16, progress = TRUE)))
 
+temp$mecA_pred_first <- sapply(seq_len(nrow(temp)), function(i){
+    res <- strsplit(temp$mecA_pred[i], split = ",")[[1]][1]
+    if (res == "MRSA"){
+        res <- TRUE
+    } else{
+        res <- FALSE
+    }
+    return( res )
+})
+
+temp$pvl_pred_first <- sapply(seq_len(nrow(temp)), function(i){
+    res <- strsplit(temp$pvl_pred[i], split = ",")[[1]][1]
+    res <- gsub("\\*", "-", res)
+    if (res == "PVL+"){
+        res <- TRUE
+    } else{
+        res <- FALSE
+    }
+    return( res )
+})
+
 fwrite(temp, "sketchy_gene_comparison.csv", row.names = FALSE)
 
 summary <- temp[,
@@ -216,7 +237,15 @@ summary <- temp[,
         pvl_sensitive_TP = length(which(pvl_sensitive & lukF_PV)),
         pvl_sensitive_TN = length(which(!pvl_sensitive & !lukF_PV)),
         pvl_sensitive_FP = length(which(pvl_sensitive & !lukF_PV)),
-        pvl_sensitive_FN = length(which(!pvl_sensitive & lukF_PV))
+        pvl_sensitive_FN = length(which(!pvl_sensitive & lukF_PV)),
+        mecA_first_TP = length(which(mecA_pred_first & mecA)),
+        mecA_first_TN = length(which(!mecA_pred_first & !mecA)),
+        mecA_first_FP = length(which(mecA_pred_first & !mecA)),
+        mecA_first_FN = length(which(!mecA_pred_first & mecA)),
+        pvl_first_TP = length(which(pvl_pred_first & lukF_PV)),
+        pvl_first_TN = length(which(!pvl_pred_first & !lukF_PV)),
+        pvl_first_FP = length(which(pvl_pred_first & !lukF_PV)),
+        pvl_first_FN = length(which(!pvl_pred_first & lukF_PV))
     ),
     by = list(resolution, reads)
 ][,
@@ -226,6 +255,8 @@ summary <- temp[,
         pvl_major_TP, pvl_major_TN, pvl_major_FP, pvl_major_FN,
         mecA_sensitive_TP, mecA_sensitive_TN, mecA_sensitive_FP, mecA_sensitive_FN,
         pvl_sensitive_TP, pvl_sensitive_TN, pvl_sensitive_FP, pvl_sensitive_FN,
+        mecA_first_TP, mecA_first_TN, mecA_first_FP, mecA_first_FN,
+        pvl_first_TP, pvl_first_TN, pvl_first_FP, pvl_first_FN,
         mecA_major_sensitivity = mecA_major_TP / (mecA_major_TP + mecA_major_FN),
         mecA_major_specificity = mecA_major_TN / (mecA_major_TN + mecA_major_FP),
         pvl_major_sensitivity = pvl_major_TP / (pvl_major_TP + pvl_major_FN),
@@ -233,7 +264,11 @@ summary <- temp[,
         mecA_sensitive_sensitivity = mecA_sensitive_TP / (mecA_sensitive_TP + mecA_sensitive_FN),
         mecA_sensitive_specificity = mecA_sensitive_TN / (mecA_sensitive_TN + mecA_sensitive_FP),
         pvl_sensitive_sensitivity = pvl_sensitive_TP / (pvl_sensitive_TP + pvl_sensitive_FN),
-        pvl_sensitive_specificity = pvl_sensitive_TN / (pvl_sensitive_TN + pvl_sensitive_FP)
+        pvl_sensitive_specificity = pvl_sensitive_TN / (pvl_sensitive_TN + pvl_sensitive_FP),
+        mecA_first_sensitivity = mecA_first_TP / (mecA_first_TP + mecA_first_FN),
+        mecA_first_specificity = mecA_first_TN / (mecA_first_TN + mecA_first_FP),
+        pvl_first_sensitivity = pvl_first_TP / (pvl_first_TP + pvl_first_FN),
+        pvl_first_specificity = pvl_first_TN / (pvl_first_TN + pvl_first_FP)
     )
 ]
 
