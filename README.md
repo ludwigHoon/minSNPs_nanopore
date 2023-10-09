@@ -31,3 +31,19 @@ For
 2. Assign most likely CC for tested samples based on SNPs distance: `Scripts/assign_cc_meta.R`
 3. Scan simulated Nanopore data `Scripts/scan_simulated_read.R`.
 4. Transform most similar isolate to most likely CC and aggregated all results for different number of SNPs or reads used : `Scripts/aggregate_simulation_result.R`.
+
+# Comparison with Krocus
+- Simulated data:
+    - Script: `Scripts/krocus_comparison.R`
+    - Result: `Results/krocus_full_result.csv` and  `Results/krocus_summary.csv`
+- Lab generated data:
+    - Script:
+    - Result: `Results/lab_krocus_full_result.csv` and `Results/lab_krocus_summary.csv`
+
+# Comparison with Sketchy
+- Simulated data:
+    - Script:
+    - Result:
+- Lab generated data:
+    - Script:
+    - Result: 
