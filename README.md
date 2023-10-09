@@ -28,3 +28,9 @@ For
 1. Simulate long read with pbsim2 (see `Scripts/simulated_long_read_generation.R`), see `Data/BIGSdb_3343897_1178826571_39602.csv` for the list of data download from pubMLST and `Results/sim_n_reads.csv` output for number of reads generated.
 2. Scan simulated Nanopore data `Scripts/scan_simulated_read.R`.
 3. Transform most similar isolate to most likely CC and aggregated all results for different number of SNPs or reads used : `Scripts/aggregate_simulation_result.R`.
+
+# Comparison with Krocus
+- Simulated data:
+    - Script: 
+    - Result: 
+- Lab generated data:
