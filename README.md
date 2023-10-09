@@ -31,6 +31,16 @@ For
 
 # Comparison with Krocus
 - Simulated data:
-    - Script: 
-    - Result: 
+    - Script: `Scripts/krocus_comparison.R`
+    - Result: `Results/krocus_full_result.csv` and  `Results/krocus_summary.csv`
 - Lab generated data:
+    - Script:
+    - Result: `Results/lab_krocus_full_result.csv` and `Results/lab_krocus_summary.csv`
+
+# Comparison with Sketchy
+- Simulated data:
+    - Script:
+    - Result:
+- Lab generated data:
+    - Script:
+    - Result: 
