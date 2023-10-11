@@ -143,6 +143,7 @@ temp$pvl_sensitive <- sapply(seq_len(nrow(temp)), function(i){
     return( PVL_in_closest )
 })
 
+# SKIP
 temp$mecA_correct_major <- unlist(bplapply(seq_len(nrow(temp)), function(i){
     mecA_count <- table(strsplit(temp$mecA_pred[i], split = ",")[[1]])
     predicted <- names(which(mecA_count == max(mecA_count)))
@@ -152,17 +153,6 @@ temp$mecA_correct_major <- unlist(bplapply(seq_len(nrow(temp)), function(i){
         MRSA_in_closest <- FALSE
     }
     return( temp$mecA[i] == MRSA_in_closest)
-}, BPPARAM=MulticoreParam(workers = 4, progress = TRUE)))
-
-temp$mecA_pred_major <- unlist(bplapply(seq_len(nrow(temp)), function(i){
-    mecA_count <- table(strsplit(temp$mecA_pred[i], split = ",")[[1]])
-    predicted <- names(which(mecA_count == max(mecA_count)))
-    if (predicted == "MRSA"){
-        MRSA_in_closest <- TRUE
-    } else{
-        MRSA_in_closest <- FALSE
-    }
-    return( MRSA_in_closest )
 }, BPPARAM=MulticoreParam(workers = 4, progress = TRUE)))
 
 temp$pvl_correct_major <- unlist(bplapply(seq_len(nrow(temp)), function(i){
@@ -178,6 +168,19 @@ temp$pvl_correct_major <- unlist(bplapply(seq_len(nrow(temp)), function(i){
     }
     return( temp$lukF_PV[i] == PVL_in_closest)
 }, BPPARAM=MulticoreParam(workers = 16, progress = TRUE)))
+
+# END SKIP
+
+temp$mecA_pred_major <- unlist(bplapply(seq_len(nrow(temp)), function(i){
+    mecA_count <- table(strsplit(temp$mecA_pred[i], split = ",")[[1]])
+    predicted <- names(which(mecA_count == max(mecA_count)))
+    if (predicted == "MRSA"){
+        MRSA_in_closest <- TRUE
+    } else{
+        MRSA_in_closest <- FALSE
+    }
+    return( MRSA_in_closest )
+}, BPPARAM=MulticoreParam(workers = 4, progress = TRUE)))
 
 temp$pvl_pred_major <- unlist(bplapply(seq_len(nrow(temp)), function(i){
     pvl_stats <- strsplit(temp$pvl_pred, split = ",")[[1]]

@@ -162,6 +162,16 @@ temp$pvl_first <- unlist(bplapply(seq_len(nrow(temp)), function(i){
     return( PVL_in_closest )
 }, BPPARAM=MulticoreParam(workers = 16, progress = TRUE)))
 
+temp$mecA_sensitive <- sapply(seq_len(nrow(temp)), function(i){
+    MRSA_in_closest <- grepl("MRSA", temp$mecA_pred[i])
+    return( MRSA_in_closest )
+})
+
+temp$pvl_sensitive <- sapply(seq_len(nrow(temp)), function(i){
+    PVL_in_closest <- grepl("PVL+", temp$pvl_pred[i])
+    return( PVL_in_closest )
+})
+
 # SKIP
 temp$mecA_correct <- sapply(seq_len(nrow(temp)), function(i){
     MRSA_in_closest <- grepl("MRSA", temp$mecA_pred[i])
@@ -171,16 +181,6 @@ temp$mecA_correct <- sapply(seq_len(nrow(temp)), function(i){
 temp$pvl_correct <- sapply(seq_len(nrow(temp)), function(i){
     PVL_in_closest <- grepl("PVL+", temp$pvl_pred[i])
     return( temp$lukF_PV[i] == PVL_in_closest)
-})
-
-temp$mecA_sensitive <- sapply(seq_len(nrow(temp)), function(i){
-    MRSA_in_closest <- grepl("MRSA", temp$mecA_pred[i])
-    return( MRSA_in_closest )
-})
-
-temp$pvl_sensitive <- sapply(seq_len(nrow(temp)), function(i){
-    PVL_in_closest <- grepl("PVL+", temp$pvl_pred[i])
-    return( PVL_in_closest )
 })
 
 temp$mecA_correct_major <- unlist(bplapply(seq_len(nrow(temp)), function(i){
