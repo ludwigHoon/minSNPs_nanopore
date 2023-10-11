@@ -8,7 +8,7 @@ The analysis were performed on a HPC using Slurm scheduler, and the scripts may 
 1. Use SNIPPY to call SNPs for the new sample (see `Scripts/SNIPPY_RUN.sh`).
 2. Extract all the SNPs defined in megaalignment from SNIPPY result (see `Scripts/extract_megaalignment_snps.R`), output of final alignment `mega_with_newdata.fasta` is in figshare [see here](https://figshare.com/s/464f38a92cde2fb067cc).
 3. Assign CC metadata to new samples based on most similar sample in megaalignment (see `Scripts/assign_cc_meta.R`), see `Results/new_sample_most_similar_mega.csv` for the result containing the most similar sample in megaalignment and the CC to be assigned, `Results/disagreement.csv` for the samples with CC metadata from PubMLST that is different from the CC to be assigned.
-4. Neighbour Joining tree is created with MEGA with `mega_with_newdata.fasta` as the input and all default parameters, output: `Result/mega_with_newdata_NJT.nwk`.
+4. Neighbour Joining tree is created with MEGA with `mega_with_newdata.fasta` as the input and all default parameters, output: `Result/mega_with_newdata_NJT.nwk`. see [here](https://microreact.org/project/nPEW3sbjQL3tD6EhMwNynj-minsnps-and-nanopore-analysis) for the interactive tree.
 
 ## Sampling 400 random SNPs
 All the SNPs are scrambled and the first 400 is taken, see `Scripts/random_snps_selection.R`.
