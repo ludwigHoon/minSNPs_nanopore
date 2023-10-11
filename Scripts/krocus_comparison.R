@@ -30,8 +30,8 @@ krocus_result <- bplapply(all_simulated, function(file, KROCUS_PATH, MLST_DATABA
         command <- paste0(KROCUS_PATH, " --print_interval 80000 ", MLST_DATABASE, " ", temp_file_name)
         result <- system(command, intern=TRUE)
         unlink(temp_file_name)
-        processed_result <- data.frame(pubmlst_id = gsub("S", "", gsub("_0001.fastq", "", file)), n_reads = (n_reads * 1000))
-        t_result <- unlist(strsplit(result, split = "\t"))
+        processed_a.frame(pubmlst_id = gsub("S", "", gsub("_0001.fastq", "", file)), n_reads = (n_reads * 1000))
+        t_result <- unlist(strresult <- datsplit(result, split = "\t"))
         processed_result$st <- t_result[1]
         processed_result$coverage <- t_result[2]
         for (allele in c("arcC", "aroE", "glpF", "gmk", "pta", "tpi", "yqiL")){

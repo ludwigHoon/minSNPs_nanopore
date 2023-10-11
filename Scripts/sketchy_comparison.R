@@ -103,10 +103,6 @@ fwrite(summary, "sketchy_summary.csv", row.names = FALSE)
 summarised_to_meta <- fread("gene_summarised_to_meta.csv")
 summarised_to_meta$pubmlst_id <- sapply(strsplit(summarised_to_meta$seq_name, split = "_"), `[`, 1)
 
-agg_high_result <- fread("sketchy_agg_result_10k.csv")
-agg_default_result <- fread("sketchy_agg_result_1k.csv")
-combined_result <- rbindlist(list(agg_default_result, agg_high_result))
-
 combined_result$pubmlst_id <- as.character(combined_result$pubmlst_id)
 temp <- merge(combined_result, summarised_to_meta[,-c("seq_name")], by = "pubmlst_id")
 
