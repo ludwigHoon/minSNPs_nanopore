@@ -32,6 +32,13 @@ For
 3. Scan simulated Nanopore data `Scripts/scan_simulated_read.R`.
 4. Transform most similar isolate to most likely CC and aggregated all results for different number of SNPs or reads used : `Scripts/aggregate_simulation_result.R`.
 
+# Gene detection
+## Testing with lab generated Nanopore data
+
+## Testing with simulated data
+
+
+
 # Comparison with Krocus
 - Simulated data:
     - Script: `Scripts/krocus_comparison.R`
