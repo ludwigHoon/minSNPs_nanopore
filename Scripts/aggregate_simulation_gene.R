@@ -67,7 +67,7 @@ result <- bplapply(all_simulated_result, function(file){
 
     rel_row$n_sequence_used <- n_search_sequence
     return(rel_row)
-}, BPPARAM = MulticoreParam(workers = 32))
+}, BPPARAM = MulticoreParam(workers = 4))
 
 all_result <- rbindlist(result)
 
