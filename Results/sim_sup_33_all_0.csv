@@ -1,0 +1,4 @@
+"type","rank","result","reads_count","proportion_matched","pass_filter","proportion_scheme_found","details","estimated_coverage","max_reads_used"
+"KMER",1,"lukS-PV",78,0.83008658008658,TRUE,0.83008658008658,NA,2.14469178571429,1000
+"KMER",1,"lukF-PV",88,0.885211995863495,TRUE,0.885211995863495,NA,2.14469178571429,1000
+"KMER",1,"mecA",180,0.0761523046092184,FALSE,0.0761523046092184,NA,2.14469178571429,1000
