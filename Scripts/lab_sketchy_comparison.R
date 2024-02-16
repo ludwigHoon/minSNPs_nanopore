@@ -24,7 +24,7 @@ for (basecall_method in c("fast", "hac", "sup")){
         for (read_n in c(1,2,3,4,5,6,7,8)){
             n_line <- read_n*4*1000
             command <- paste0("zcat ", file, " | sed -n 1,", n_line, "p |")
-            command <- paste0(command, SKETCHY_PATH, " predict -r ", SKETCHY_REFERENCE_FILE, " -g ", SKETCHY_GENOTYPE_FILE, " -t 5 -H")
+            command <- paste0(command, SKETCHY_PATH, " predict -r ", SKETCHY_REFERENCE_FILE, " -g ", SKETCHY_GENOTYPE_FILE, " -t 5 --consensus -H")
             result_for_file[[read_n]] <- fread(text = system(command, intern = TRUE))
         }
         result_for_file <- rbindlist(result_for_file)
@@ -46,7 +46,7 @@ for (basecall_method in c("fast", "hac", "sup")){
         for (read_n in c(1,2,3,4,5,6,7,8)){
             n_line <- read_n*4*1000
             command <- paste0("zcat ", file, " | sed -n 1,", n_line, "p |")
-            command <- paste0(command, SKETCHY_PATH, " predict -r ", SKETCHY_REFERENCE_FILE, " -g ", SKETCHY_GENOTYPE_FILE, " -t 5 -H")
+            command <- paste0(command, SKETCHY_PATH, " predict -r ", SKETCHY_REFERENCE_FILE, " -g ", SKETCHY_GENOTYPE_FILE, " -t 5 --consensus -H")
             result_for_file[[read_n]] <- fread(text = system(command, intern = TRUE))
         }
         result_for_file <- rbindlist(result_for_file)
@@ -78,9 +78,10 @@ mlst_profiles <- mlst_profiles[, c("ST", "clonal_complex")]
 fin_result <- merge(combined_result, mlst_profiles, by.x = "mlst", by.y = "ST")
 fin_result[clonal_complex == ""]$clonal_complex <- paste0("CC", fin_result[clonal_complex == ""]$mlst)
 
+fin_result <- fin_result[, .(predicted_MLST.CC = paste0(unique(clonal_complex), collapse = ","), predicted_MLST.ST = paste0(unique(mlst), collapse = ","), predicted_mecA = paste0(unique(meca), collapse = ","), predicted_pvl = paste0(unique(pvl), collapse = ","), shared_hashes = paste0(unique(shared_hashes), collapse = ",")), by = list(barcode, resolution, basecall_method, reads)]
 
-to_collapse <- fin_result[fin_result[, .I[shared_hashes == max(shared_hashes)], by = list(barcode, resolution, basecall_method, reads)]$V1]
-collapsed_top_result <- to_collapse[,.(predicted_MLST.CC = paste0(unique(clonal_complex), collapse = ","), predicted_MLST.ST = paste0(unique(mlst), collapse = ","), predicted_mecA = paste0(unique(meca), collapse = ","), predicted_pvl = paste0(unique(pvl), collapse = ","), shared_hashes = paste0(unique(shared_hashes), collapse = ",")), by = list(barcode, resolution, basecall_method, reads)]
+#to_collapse <- fin_result[fin_result[, .I[shared_hashes == max(shared_hashes)], by = list(barcode, resolution, basecall_method, reads)]$V1]
+#collapsed_top_result <- to_collapse[,.(predicted_MLST.CC = paste0(unique(clonal_complex), collapse = ","), predicted_MLST.ST = paste0(unique(mlst), collapse = ","), predicted_mecA = paste0(unique(meca), collapse = ","), predicted_pvl = paste0(unique(pvl), collapse = ","), shared_hashes = paste0(unique(shared_hashes), collapse = ",")), by = list(barcode, resolution, basecall_method, reads)]
 
 nanopore_run_meta <- fread(NANOPORE_RUN_META)
 all_filled_meta <- fread(FILLED_META_FILE)
@@ -89,9 +90,9 @@ merged_info$barcode <- merged_info$Barcode.ID
 all_filled_meta <- merged_info[, c("barcode", "MLST.CC", "CC_filled")]
 
 all_filled_meta$barcode <- as.character(all_filled_meta$barcode)
-collapsed_top_result$barcode <- as.character(collapsed_top_result$barcode)
+fin_result$barcode <- as.character(fin_result$barcode)
 
-merged_result <- merge(collapsed_top_result, all_filled_meta, by = "barcode")
+merged_result <- merge(fin_result, all_filled_meta, by = "barcode")
 merged_result$predicted_mlst_is_single <- sapply(merged_result$predicted_MLST.CC, function(x) {!grepl(",", x)})
 merged_result$predicted_cc_is_correct <- sapply(seq_len(nrow(merged_result)), function(i){
     if (merged_result$predicted_mlst_is_single[i] == TRUE){
@@ -105,12 +106,41 @@ merged_result$predicted_st_is_correct <- sapply(seq_len(nrow(merged_result)), fu
 })
 merged_result$predicted_mlst_is_correct <- merged_result$predicted_st_is_correct | merged_result$predicted_cc_is_correct
 
+for (bc in c(33, 73)){
+    for (res in c("1k", "10k")){
+        for (ctype in c("fast", "hac", "sup")){
+            max_read <- max(merged_result[
+                barcode == bc &
+                resolution == res &
+                basecall_method == ctype]$reads)
+            last_result <- merged_result[
+                barcode == bc &
+                resolution == res &
+                basecall_method == ctype &
+                reads == max_read]
+            rounded <- floor(max_read / 1000)*1000
+            while(rounded != 8000){
+                dup_last_result <- last_result
+                dup_last_result$reads <- rounded + 1000
+                merged_result <- rbind(merged_result, dup_last_result)
+                rounded <- rounded + 1000
+            }
+        }
+    }
+}
+
+merged_result <- merged_result[
+                reads %in% seq(1000,8000, 1000)]
+merged_result <- fread("lab_sketchy_merged_result.csv")
+for (bc in unique(merged_result$barcode)){
+    print(nrow(merged_result[barcode == bc]))
+}
 ### MAJOR LINEAGE ASSIGNMENT COMPARISON
 fwrite(merged_result, "lab_sketchy_merged_result.csv", row.names = FALSE)
 summary <- merged_result[,.(n_correct = length(which(predicted_mlst_is_correct)),
                 n_single = length(which(predicted_mlst_is_single)),
                 n_single_correct = length(which(predicted_mlst_is_single & predicted_mlst_is_correct))),
-            by = list(resolution, basecall_method, reads)]
+            by = list(resolution, basecall_method, reads)][order(resolution, basecall_method, reads)]
 fwrite(summary, "lab_sketchy_summary.csv", row.names = FALSE)
 
 ### GENE DETECTION COMPARISON
@@ -119,173 +149,32 @@ summarised_to_meta$mecA <- ifelse(summarised_to_meta$MRSA == "+", TRUE, FALSE)
 summarised_to_meta$lukF_PV <- ifelse(summarised_to_meta$PVL == "+", TRUE, FALSE)
 summarised_to_meta$lukS_PV <- ifelse(summarised_to_meta$PVL == "+", TRUE, FALSE)
 summarised_to_meta$barcode <- sprintf("%02d", as.numeric(summarised_to_meta$barcode))
-combined_result$barcode <- sprintf("%02d", as.numeric(combined_result$barcode))
-temp <- merge(combined_result, summarised_to_meta, by = "barcode")
+merged_result$barcode <- sprintf("%02d", as.numeric(merged_result$barcode))
+temp <- merge(merged_result, summarised_to_meta, by = "barcode")
 
-temp <- temp[,
-    list(mecA, lukF_PV, lukS_PV,
-        mecA_pred = paste0(meca, collapse = ","),
-        pvl_pred = paste0(pvl, collapse = ","),
-        shared_hashes = paste0(shared_hashes, collapse = ",")),
-    by = list(resolution, basecall_method, reads, barcode)
-]
-
-temp$multiple_meca <- sapply(temp$mecA_pred, function(x){
-    return(length(unique(strsplit(x, split = ",")[[1]])) != 1)}
-)
-temp$multiple_pvl <- sapply(temp$pvl_pred, function(x){
-    pvl_stats <- unique(strsplit(x, split = ",")[[1]])
-    pvl_stats <- gsub("\\*", "-", pvl_stats)
-    return(length(unique(pvl_stats)) != 1)}
-)
-
-temp$mecA_first <- unlist(bplapply(seq_len(nrow(temp)), function(i){
-    predicted <- strsplit(temp$mecA_pred[i], split = ",")[[1]][1]
-    if (predicted == "MRSA"){
-        MRSA_in_closest <- TRUE
-    } else{
-        MRSA_in_closest <- FALSE
-    }
-    return( MRSA_in_closest)
-}, BPPARAM=MulticoreParam(workers = 4, progress = TRUE)))
-
-temp$pvl_first <- unlist(bplapply(seq_len(nrow(temp)), function(i){
-    pvl_stats <- strsplit(temp$pvl_pred, split = ",")[[1]]
-    pvl_stats <- gsub("\\*", "-", pvl_stats)
-    predicted <- pvl_stats[1]
-    
-    if(predicted == "PVL+"){
-        PVL_in_closest <- TRUE
-    } else{
-        PVL_in_closest <- FALSE
-    }
-    return( PVL_in_closest )
-}, BPPARAM=MulticoreParam(workers = 16, progress = TRUE)))
-
-temp$mecA_sensitive <- sapply(seq_len(nrow(temp)), function(i){
-    MRSA_in_closest <- grepl("MRSA", temp$mecA_pred[i])
-    return( MRSA_in_closest )
-})
-
-temp$pvl_sensitive <- sapply(seq_len(nrow(temp)), function(i){
-    PVL_in_closest <- grepl("PVL+", temp$pvl_pred[i])
-    return( PVL_in_closest )
-})
-
-# SKIP
-temp$mecA_correct <- sapply(seq_len(nrow(temp)), function(i){
-    MRSA_in_closest <- grepl("MRSA", temp$mecA_pred[i])
-    return( temp$mecA[i] == MRSA_in_closest)
-})
-
-temp$pvl_correct <- sapply(seq_len(nrow(temp)), function(i){
-    PVL_in_closest <- grepl("PVL+", temp$pvl_pred[i])
-    return( temp$lukF_PV[i] == PVL_in_closest)
-})
-
-temp$mecA_correct_major <- unlist(bplapply(seq_len(nrow(temp)), function(i){
-    mecA_count <- table(strsplit(temp$mecA_pred[i], split = ",")[[1]])
-    predicted <- names(which(mecA_count == max(mecA_count)))
-    if (predicted == "MRSA"){
-        MRSA_in_closest <- TRUE
-    } else{
-        MRSA_in_closest <- FALSE
-    }
-    return( temp$mecA[i] == MRSA_in_closest)
-}, BPPARAM=MulticoreParam(workers = 4, progress = TRUE)))
-
-temp$pvl_correct_major <- unlist(bplapply(seq_len(nrow(temp)), function(i){
-    pvl_stats <- strsplit(temp$pvl_pred, split = ",")[[1]]
-    pvl_stats <- gsub("\\*", "-", pvl_stats)
-    pvl_count <- table(pvl_stats)
-    predicted <- names(which(pvl_count == max(pvl_count)))
-    
-    if(predicted == "PVL+"){
-        PVL_in_closest <- TRUE
-    } else{
-        PVL_in_closest <- FALSE
-    }
-    return( temp$lukF_PV[i] == PVL_in_closest)
-}, BPPARAM=MulticoreParam(workers = 16, progress = TRUE)))
-# SKIP end
-
-temp$mecA_pred_major <- unlist(bplapply(seq_len(nrow(temp)), function(i){
-    mecA_count <- table(strsplit(temp$mecA_pred[i], split = ",")[[1]])
-    predicted <- names(which(mecA_count == max(mecA_count)))
-    if (predicted == "MRSA"){
-        MRSA_in_closest <- TRUE
-    } else{
-        MRSA_in_closest <- FALSE
-    }
-    return( MRSA_in_closest )
-}, BPPARAM=MulticoreParam(workers = 4, progress = TRUE)))
-
-temp$pvl_pred_major <- unlist(bplapply(seq_len(nrow(temp)), function(i){
-    pvl_stats <- strsplit(temp$pvl_pred, split = ",")[[1]]
-    pvl_stats <- gsub("\\*", "-", pvl_stats)
-    pvl_count <- table(pvl_stats)
-    predicted <- names(which(pvl_count == max(pvl_count)))
-    
-    if(predicted == "PVL+"){
-        PVL_in_closest <- TRUE
-    } else{
-        PVL_in_closest <- FALSE
-    }
-    return( PVL_in_closest )
-}, BPPARAM=MulticoreParam(workers = 16, progress = TRUE)))
-
+temp$mecA_pred <- FALSE
+temp[predicted_mecA == "MRSA"]$mecA_pred <- TRUE
+temp$pvl_pred <- TRUE
+temp[predicted_pvl == "PVL-"]$pvl_pred <- FALSE
 fwrite(temp, "lab_sketchy_gene_comparison.csv", row.names = FALSE)
 
 summary <- temp[,
-    list(
-        mecA_major_TP = length(which(mecA_pred_major & mecA)),
-        mecA_major_TN = length(which(!mecA_pred_major & !mecA)),
-        mecA_major_FP = length(which(mecA_pred_major & !mecA)),
-        mecA_major_FN = length(which(!mecA_pred_major & mecA)),
-        pvl_major_TP = length(which(pvl_pred_major & lukF_PV)),
-        pvl_major_TN = length(which(!pvl_pred_major & !lukF_PV)),
-        pvl_major_FP = length(which(pvl_pred_major & !lukF_PV)),
-        pvl_major_FN = length(which(!pvl_pred_major & lukF_PV)),
-        mecA_sensitive_TP = length(which(mecA_sensitive & mecA)),
-        mecA_sensitive_TN = length(which(!mecA_sensitive & !mecA)),
-        mecA_sensitive_FP = length(which(mecA_sensitive & !mecA)),
-        mecA_sensitive_FN = length(which(!mecA_sensitive & mecA)),
-        pvl_sensitive_TP = length(which(pvl_sensitive & lukF_PV)),
-        pvl_sensitive_TN = length(which(!pvl_sensitive & !lukF_PV)),
-        pvl_sensitive_FP = length(which(pvl_sensitive & !lukF_PV)),
-        pvl_sensitive_FN = length(which(!pvl_sensitive & lukF_PV)),
-        mecA_first_TP = length(which(mecA_first & mecA)),
-        mecA_first_TN = length(which(!mecA_first & !mecA)),
-        mecA_first_FP = length(which(mecA_first & !mecA)),
-        mecA_first_FN = length(which(!mecA_first & mecA)),
-        pvl_first_TP = length(which(pvl_first & lukF_PV)),
-        pvl_first_TN = length(which(!pvl_first & !lukF_PV)),
-        pvl_first_FP = length(which(pvl_first & !lukF_PV)),
-        pvl_first_FN = length(which(!pvl_first & lukF_PV))
+    .(
+        mecA_TP = length(which(mecA_pred & mecA)),
+        mecA_TN = length(which(!mecA_pred & !mecA)),
+        mecA_FP = length(which(mecA_pred & !mecA)),
+        mecA_FN = length(which(!mecA_pred & mecA)),
+        pvl_TP = length(which(pvl_pred & lukF_PV)),
+        pvl_TN = length(which(!pvl_pred & !lukF_PV)),
+        pvl_FP = length(which(pvl_pred & !lukF_PV)),
+        pvl_FN = length(which(!pvl_pred & lukF_PV))
     ),
     by = list(resolution, basecall_method, reads)
-][,
-    list(
-        resolution, basecall_method, reads, 
-        mecA_major_TP, mecA_major_TN, mecA_major_FP, mecA_major_FN,
-        pvl_major_TP, pvl_major_TN, pvl_major_FP, pvl_major_FN,
-        mecA_sensitive_TP, mecA_sensitive_TN, mecA_sensitive_FP, mecA_sensitive_FN,
-        pvl_sensitive_TP, pvl_sensitive_TN, pvl_sensitive_FP, pvl_sensitive_FN,
-        mecA_first_TP, mecA_first_TN, mecA_first_FP, mecA_first_FN,
-        pvl_first_TP, pvl_first_TN, pvl_first_FP, pvl_first_FN,
-        mecA_major_sensitivity = mecA_major_TP / (mecA_major_TP + mecA_major_FN),
-        mecA_major_specificity = mecA_major_TN / (mecA_major_TN + mecA_major_FP),
-        pvl_major_sensitivity = pvl_major_TP / (pvl_major_TP + pvl_major_FN),
-        pvl_major_specificity = pvl_major_TN / (pvl_major_TN + pvl_major_FP),
-        mecA_sensitive_sensitivity = mecA_sensitive_TP / (mecA_sensitive_TP + mecA_sensitive_FN),
-        mecA_sensitive_specificity = mecA_sensitive_TN / (mecA_sensitive_TN + mecA_sensitive_FP),
-        pvl_sensitive_sensitivity = pvl_sensitive_TP / (pvl_sensitive_TP + pvl_sensitive_FN),
-        pvl_sensitive_specificity = pvl_sensitive_TN / (pvl_sensitive_TN + pvl_sensitive_FP),
-        mecA_first_sensitivity = mecA_first_TP / (mecA_first_TP + mecA_first_FN),
-        mecA_first_specificity = mecA_first_TN / (mecA_first_TN + mecA_first_FP),
-        pvl_first_sensitivity = pvl_first_TP / (pvl_first_TP + pvl_first_FN),
-        pvl_first_specificity = pvl_first_TN / (pvl_first_TN + pvl_first_FP)
-    )
-]
+][, .(resolution, basecall_method, reads, mecA_TP, mecA_TN, mecA_FP, mecA_FN, pvl_TP, pvl_TN, pvl_FP, pvl_FN,
+    mecA_sensitivity = mecA_TP / (mecA_TP + mecA_FN),
+    mecA_specificity = mecA_TN / (mecA_TN + mecA_FP),
+    pvl_sensitivity = pvl_TP / (pvl_TP + pvl_FN),
+    pvl_specificity = pvl_TN / (pvl_TN + pvl_FP)
+)][order(resolution, basecall_method, reads)]
 
 fwrite(summary, "lab_sketchy_gene_summary.csv", row.names = FALSE)

@@ -35,6 +35,27 @@ result <- bplapply(all_gene_result, function(file){
 
 all_result <- rbindlist(result)
 
+# for samples with less reads, use result from last reads
+barcode_with_less_reads <- names(which(table(all_result$Barcode.ID) < 240))
+for (barc in barcode_with_less_reads){
+    for (ctype in c("fast", "hac", "sup")){
+        for (nseq in all_result[Barcode.ID == barc & basecall_method == ctype]$n_sequence_used){
+            last_reads <- max(all_result[Barcode.ID == barc & basecall_method == ctype & n_sequence_used == nseq]$max_reads_used)
+            last_result <- all_result[Barcode.ID == barc &
+                basecall_method == ctype &
+                n_sequence_used == nseq &
+                max_reads_used == last_reads]
+            while (last_reads != 8000){
+                dup_last_result <- last_result
+                dup_last_result$max_reads_used <- last_reads + 1000
+                all_result <- rbind(all_result, dup_last_result)
+                last_reads <- last_reads + 1000
+            }
+        }
+    }
+}
+
+all_result <- all_result[order(n_sequence_used, basecall_method, Barcode.ID, max_reads_used)]
 fwrite(all_result, "lab_gene_result.csv", row.names = FALSE)
 
 summary <- list()

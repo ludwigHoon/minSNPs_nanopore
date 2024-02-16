@@ -93,14 +93,19 @@ for (i in seq_len(nrow(special_handling))){
     if (potential_SLV_CCs != "") {
         merged_result[st=="ND"][i]$clonal_complex <- potential_SLV_CCs
         merged_result[st=="ND"][i]$note <- paste0("taken from SLV with ", potential_SLV_nSTs, " STs")
+        next
     }
     
-    dlv_q_strings <- sapply(c(1:6), function(x){
-        alleles <- unlist(strsplit(q_string, split = "_"))
-        alleles[x] <- ".*"
-        alleles[x+1] <- ".*"
-        return(paste0(alleles, collapse = "_"))
-    })
+    dlv_q_strings <- unlist(sapply(c(1:6), function(x){
+        results <- rep("", 7-x)
+        for (y in seq_len(7-x)){
+            alleles <- unlist(strsplit(q_string, split = "_"))
+            alleles[x] <- ".*"
+            alleles[x+y] <- ".*"
+            results[y] <- paste0(alleles, collapse = "_")
+        }
+        return(results)
+    }))
     DLV_result <- ST_profile[grepl(paste(dlv_q_strings, collapse="|"), ST_profile$q_string)][clonal_complex != ""]
     T_CC <- table(DLV_result$clonal_complex)
     potential_DLV_nSTs <- paste0(T_CC, collapse = ",")
@@ -133,6 +138,7 @@ merged_result$predicted_mlst_is_single <- sapply(merged_result$clonal_complex, f
 merged_result[is.na(clonal_complex)]$predicted_mlst_is_single <- NA
 
 summary <- merged_result[,.(n_correct = length(which(predicted_cc_is_correct)),
+              n_wrong = length(which(!predicted_cc_is_correct)),
               n_undefined = length(which(is.na(clonal_complex))),
               n_single = length(which(predicted_mlst_is_single)),
               n_single_correct = length(which(predicted_mlst_is_single & predicted_cc_is_correct))

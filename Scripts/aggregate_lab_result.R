@@ -61,7 +61,35 @@ RES$predicted_mlst_is_correct <- sapply(seq_len(nrow(RES)), function(i){
     }
 })
 
+# for samples with less reads, use result from last reads
+barcode_with_less_reads <- names(which(table(RES$barcode_id) < 432))
+for (barc in barcode_with_less_reads){
+    for (ctype in c("fast", "hac", "sup")){
+        for (snps_type in c("random_400", "non_random_200")){
+            for (snps_used in RES[barcode_id == barc & call_type == ctype & snps_type == snps_type]$snps_used){
+                last_reads <- max(RES[barcode_id == barc & call_type == ctype & snps_type == snps_type & snps_used == snps_used]$max_reads_used)
+                last_result <- RES[
+                    barcode_id == barc &
+                    call_type == ctype &
+                    snps_type == snps_type &
+                    snps_used == snps_used &
+                    max_reads_used == last_reads]
+                while(last_reads != 8000){
+                    dup_last_result <- last_result
+                    dup_last_result$max_reads_used <- last_reads + 1000
+                    RES <- rbind(RES, dup_last_result)
+                    last_reads <- last_reads + 1000
+                }
+            }
+        }
+    }
+}
+RES[order(snps_type, snps_used, call_type, barcode_id, max_reads_used)]
 fwrite(RES, "lab_individual_results.csv", row.names = FALSE)
+
+# Estimated coverage stat
+RES[snps_type == "random_400" & snps_used == 400 & (! barcode_id %in% c(33, 73))][,.(max_reads_used, call_type, estimated_coverage)][,.(average_estimated_coverage = mean(estimated_coverage)), by = list(call_type,
+ max_reads_used)]
 
 summary <- RES[,.(n_correct = length(which(predicted_mlst_is_correct)),
                 n_single = length(which(predicted_mlst_is_single)),
