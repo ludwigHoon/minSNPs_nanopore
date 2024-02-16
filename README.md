@@ -15,9 +15,8 @@ All the SNPs are scrambled and the first 400 is taken, see `Scripts/random_snps_
 
 ## Search string generation
 For
-- random SNPs, see ``.
-- minSNPs selected SNPs, see ``.
-
+- SNPs, see `Scripts/generate_snp_search_sequence.R`.
+- gene sequences, see `Scripts/generate_gene_search_sequence.R`.
 
 ## Major lineage assignment
 
@@ -35,8 +34,12 @@ For
 
 ## Gene detection
 ### Testing with lab generated Nanopore data
+1. Scan lab generated Nanopore data `Scripts/scan_lab_gene.R`.
+2. Transform most similar isolate to most likely CC and aggregated all results for different number of SNPs or reads used : `Scripts/aggregate_lab_gene.R`.
 
 ### Testing with simulated data
+1. Scan simulated Nanopore data `Scripts/scan_simulated_gene.R`.
+2. Transform most similar isolate to most likely CC and aggregated all results for different number of SNPs or reads used : `Scripts/aggregate_simulation_gene.R`.
 
 
 # Comparison
