@@ -38,7 +38,7 @@ if (!file.exists("gene_seq.csv")){
 if (!file.exists("snp_seq.csv")){
   print("Downloading major lineage reference library")
   download.file("https://raw.githubusercontent.com/ludwigHoon/minSNPs_nanopore/refs/heads/main/Results/CC_search_sequence_200_non_unique_SNPs.csv", "snp_seq.csv")
-  download.file("https://figshare.com/ndownloader/files/38764935", "snp_sets.csv")
+  download.file("https://raw.githubusercontent.com/ludwigHoon/minSNPs_nanopore/refs/heads/main/Data/sup_5_7_mega_hd_2_steps.txt", "snp_sets.csv")
 }
 
 if (!require("minSNPs", quietly = TRUE)){
